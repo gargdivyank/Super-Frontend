@@ -172,6 +172,34 @@ For testing purposes, you can use these demo accounts:
 
 ## Deployment
 
+### Deploying to Vercel
+
+1. **Push your code to GitHub/GitLab/Bitbucket**
+
+2. **Import your project to Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Click "New Project"
+   - Import your repository
+
+3. **Configure Environment Variables**
+   - In Vercel Dashboard, go to: **Settings → Environment Variables**
+   - Add the following variable:
+     - **Name**: `REACT_APP_API_URL`
+     - **Value**: `https://super-backend-eosin.vercel.app/api` (or your production API URL)
+   - Apply to: **Production**, **Preview**, and **Development**
+
+4. **Deploy**
+   - Vercel will automatically detect the build settings from `vercel.json`
+   - The build command is: `npm run build`
+   - Output directory: `build`
+   - SPA routing is configured automatically
+
+5. **Verify Deployment**
+   - After deployment, test all routes to ensure React Router works correctly
+   - Check that API calls are working with the production backend
+
+### Manual Deployment
+
 1. **Build the application**
    ```bash
    npm run build

@@ -3,6 +3,7 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
 # Production builds
 build/
@@ -21,6 +22,7 @@ logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 lerna-debug.log*
 
 # Runtime data
@@ -36,8 +38,7 @@ coverage/
 # nyc test coverage
 .nyc_output
 
-# Dependency directories
-node_modules/
+# Dependency directories (already covered above, but kept for clarity)
 jspm_packages/
 
 # Optional npm cache directory
@@ -76,7 +77,7 @@ jspm_packages/
 
 # Gatsby files
 .cache/
-public
+# Note: public/ folder should NOT be ignored for React apps - it contains index.html and assets
 
 # Storybook build outputs
 .out
@@ -113,9 +114,18 @@ coverage/
 # React specific
 # See https://facebook.github.io/create-react-app/docs/deployment for more information.
 /build
+# Note: /build is already covered above, but this ensures it's ignored at root level
 
 # React DevTools
 .react-devtools
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Vercel
+.vercel
+
+# Package manager lock files (uncomment if you want to ignore them)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
