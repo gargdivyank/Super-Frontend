@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Download, Search, Filter, Calendar, FileText, ChevronDown, ChevronRight } from 'lucide-react';
+import { Download, Upload, Search, Filter, Calendar, FileText, ChevronDown, ChevronRight } from 'lucide-react';
 import { subAdminAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -15,6 +15,8 @@ const SubAdminLeads = () => {
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
   const [paginationInfo, setPaginationInfo] = useState({});
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
   // Debounced search
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const searchTimeoutRef = useRef(null);
@@ -141,6 +143,35 @@ const SubAdminLeads = () => {
     }
   };
 
+  const handleUploadLeads = async (e) => {
+    const file = e?.target?.files?.[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      toast.error('Please select a .csv file');
+      e.target.value = '';
+      return;
+    }
+    try {
+      setUploading(true);
+      const response = await subAdminAPI.uploadLeads(file);
+      const data = response.data || {};
+      const updated = data.updated ?? 0;
+      const failed = data.failed ?? 0;
+      if (data.errors?.length) {
+        data.errors.forEach((err) => toast.error(err));
+      }
+      toast.success(`Upload complete. Updated: ${updated}, Failed: ${failed}`);
+      fetchLeads();
+    } catch (error) {
+      console.error('Error uploading leads:', error);
+      const msg = error.response?.data?.message || error.message || 'Failed to upload leads';
+      toast.error(msg);
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
   const toggleLeadExpansion = (leadId) => {
     const newExpanded = new Set(expandedLeads);
     if (newExpanded.has(leadId)) {
@@ -154,6 +185,23 @@ const SubAdminLeads = () => {
   const getId = (obj) =>
     typeof obj === 'string' ? obj : (obj && (obj._id || obj.id)) || '';
 
+  const handleUpdateLead = async (id, updates) => {
+    try {
+      const response = await subAdminAPI.updateLead(id, updates);
+      const updatedLead = response.data.data || response.data;
+
+      setLeads((prevLeads) =>
+        prevLeads.map((lead) =>
+          getId(lead) === getId(updatedLead) ? updatedLead : lead
+        )
+      );
+
+      toast.success('Lead updated successfully');
+    } catch (error) {
+      console.error('Error updating lead:', error);
+      toast.error('Failed to update lead');
+    }
+  };
   const renderDynamicFields = (lead) => {
     if (!lead.dynamicFields || Object.keys(lead.dynamicFields).length === 0) {
       return null;
@@ -304,14 +352,53 @@ const SubAdminLeads = () => {
                   {/* Additional Lead Info */}
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Lead Details:</h4>
-                    <div className="space-y-1 text-sm">
-                      <div><span className="font-medium">Status:</span> {lead.status}</div>
-                      <div><span className="font-medium">Source:</span> {lead.source || 'Direct'}</div>
-                      {/* <div><span className="font-medium">IP Address:</span> {lead.ipAddress || 'N/A'}</div>
-                      <div><span className="font-medium">Created:</span> {new Date(lead.createdAt).toLocaleString()}</div>
-                      {lead.updatedAt && (
-                        <div><span className="font-medium">Last Updated:</span> {new Date(lead.updatedAt).toLocaleString()}</div>
-                      )} */}
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium">Status:</span>
+                        <select
+                          className="input-field w-auto"
+                          value={lead.status}
+                          onChange={(e) =>
+                            handleUpdateLead(leadKey, { status: e.target.value })
+                          }
+                        >
+                          <option value="new">New</option>
+                          <option value="contacted">Contacted</option>
+                          <option value="qualified">Qualified</option>
+                          <option value="converted">Converted</option>
+                          <option value="lost">Lost</option>
+                        </select>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium">Last Contacted:</span>
+                        <input
+                          type="date"
+                          className="input-field w-auto"
+                          value={
+                            lead.lastContacted
+                              ? new Date(lead.lastContacted).toISOString().slice(0, 10)
+                              : ''
+                          }
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            handleUpdateLead(leadKey, {
+                              lastContacted: value ? new Date(value).toISOString() : null,
+                            });
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="btn-secondary text-xs"
+                          onClick={() =>
+                            handleUpdateLead(leadKey, { lastContacted: new Date().toISOString() })
+                          }
+                        >
+                          Set to today
+                        </button>
+                      </div>
+                      <div>
+                        <span className="font-medium">Source:</span> {lead.source || 'Direct'}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -383,13 +470,31 @@ const SubAdminLeads = () => {
             Manage leads from your assigned landing page
           </p>
         </div>
-        <button
-          onClick={handleExport}
-          className="btn-secondary flex items-center"
-        >
-          <Download className="h-4 w-4 mr-2" />
-          Export Leads
-        </button>
+        <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={handleUploadLeads}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="btn-secondary flex items-center"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            {uploading ? 'Uploading...' : 'Upload Leads'}
+          </button>
+          <button
+            onClick={handleExport}
+            className="btn-secondary flex items-center"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Leads
+          </button>
+        </div>
       </div>
 
       {/* Filters */}

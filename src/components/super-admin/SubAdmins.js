@@ -11,6 +11,10 @@ const SubAdmins = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [paginationInfo, setPaginationInfo] = useState({});
 
   const {
     register,
@@ -20,15 +24,23 @@ const SubAdmins = () => {
   } = useForm();
 
   useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
+
+  useEffect(() => {
     fetchData();
-  }, []);
+  }, [page, limit, searchTerm]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const [adminsResponse, pagesResponse] = await Promise.all([
-        superAdminAPI.getSubAdmins(),
-        superAdminAPI.getLandingPages(),
+        superAdminAPI.getSubAdmins({
+          page,
+          limit,
+          search: searchTerm !== '' ? searchTerm : undefined,
+        }),
+        superAdminAPI.getLandingPages({ status: 'active', limit: 1000 }),
       ]);
       
       console.log('SubAdmins API Response:', adminsResponse);
@@ -40,6 +52,8 @@ const SubAdmins = () => {
       
       setSubAdmins(adminsArray);
       setLandingPages(pagesArray);
+      setTotal(adminsResponse.data.total || adminsResponse.data.count || adminsArray.length);
+      setPaginationInfo(adminsResponse.data.pagination || {});
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load sub admins');
@@ -115,11 +129,35 @@ const SubAdmins = () => {
     reset();
   };
 
-  const filteredAdmins = (Array.isArray(subAdmins) ? subAdmins : []).filter(admin =>
-    admin.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    admin.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    admin.companyName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAdmins = Array.isArray(subAdmins) ? subAdmins : [];
+
+  const onNextPage = () => {
+    if (paginationInfo.next) setPage(paginationInfo.next.page);
+  };
+
+  const onPrevPage = () => {
+    if (paginationInfo.prev) setPage(paginationInfo.prev.page);
+  };
+
+  const onPageSelect = (num) => setPage(num);
+  const totalPages = Math.ceil(total / limit) || 1;
+
+  const renderPageNumbers = () => {
+    const pagesArr = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pagesArr.push(
+        <button
+          key={i}
+          onClick={() => onPageSelect(i)}
+          className={`mx-1 rounded px-2 py-1 border ${i === page ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-900'}`}
+          disabled={i === page}
+        >
+          {i}
+        </button>
+      );
+    }
+    return pagesArr;
+  };
 
   if (loading) {
     return (
@@ -149,6 +187,9 @@ const SubAdmins = () => {
           <p className="mt-1 text-sm text-gray-500">
             Manage sub admin accounts and their landing page access
           </p>
+          <div className="mt-1 text-xs text-gray-500">
+            Page {page} / {totalPages}. Showing {subAdmins.length} of {total} sub admins.
+          </div>
         </div>
         <button
           onClick={openCreateModal}
@@ -270,6 +311,11 @@ const SubAdmins = () => {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="my-4 flex justify-center items-center space-x-1">
+          <button onClick={onPrevPage} disabled={!paginationInfo.prev} className="px-2 py-1 border rounded disabled:opacity-50">Prev</button>
+          {renderPageNumbers()}
+          <button onClick={onNextPage} disabled={!paginationInfo.next} className="px-2 py-1 border rounded disabled:opacity-50">Next</button>
         </div>
       </div>
 

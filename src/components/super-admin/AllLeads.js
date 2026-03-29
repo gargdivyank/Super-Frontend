@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Search, Filter, Calendar, FileText, Globe, ChevronDown, ChevronRight } from 'lucide-react';
+import { Download, Upload, Search, Filter, Calendar, FileText, Globe, ChevronDown, ChevronRight } from 'lucide-react';
 import { superAdminAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -18,6 +18,8 @@ const AllLeads = () => {
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
   const [paginationInfo, setPaginationInfo] = useState({});
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = React.useRef(null);
 
 
 
@@ -107,6 +109,35 @@ const AllLeads = () => {
   const getId = (obj) =>
     typeof obj === 'string' ? obj : (obj && (obj._id || obj.id)) || '';
 
+  const activeLandingPages = (Array.isArray(landingPages) ? landingPages : []).filter(
+    (page) => page?.status === 'active'
+  );
+
+  useEffect(() => {
+    if (landingPageFilter === 'all') return;
+    const selectedIsActive = activeLandingPages.some((page) => getId(page) === landingPageFilter);
+    if (!selectedIsActive) {
+      setLandingPageFilter('all');
+    }
+  }, [landingPageFilter, activeLandingPages]);
+
+  const handleUpdateLead = async (id, updates) => {
+    try {
+      const response = await superAdminAPI.updateLead(id, updates);
+      const updatedLead = response.data.data || response.data;
+
+      setLeads((prevLeads) =>
+        prevLeads.map((lead) =>
+          getId(lead) === getId(updatedLead) ? updatedLead : lead
+        )
+      );
+
+      toast.success('Lead updated successfully');
+    } catch (error) {
+      console.error('Error updating lead:', error);
+      toast.error('Failed to update lead');
+    }
+  };
 
 
   const renderDynamicFields = (lead) => {
@@ -148,6 +179,9 @@ const AllLeads = () => {
               >
                 {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
               </button>
+              <div className="h-8 w-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-sm font-semibold mr-3">
+                {(lead.firstName || lead.lastName || '?').charAt(0).toUpperCase()}
+              </div>
               <div>
                 <div className="text-sm font-medium text-gray-900">
                   {lead.firstName} {lead.lastName}
@@ -211,14 +245,53 @@ const AllLeads = () => {
                   {/* Additional Lead Info */}
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Lead Details:</h4>
-                    <div className="space-y-1 text-sm">
-                      <div><span className="font-medium">Status:</span> {lead.status}</div>
-                      <div><span className="font-medium">Source:</span> {lead.source || 'Direct'}</div>
-                      {/* <div><span className="font-medium">IP Address:</span> {lead.ipAddress || 'N/A'}</div>
-                      <div><span className="font-medium">Created:</span> {new Date(lead.createdAt).toLocaleString()}</div>
-                      {lead.updatedAt && (
-                        <div><span className="font-medium">Last Updated:</span> {new Date(lead.updatedAt).toLocaleString()}</div>
-                      )} */}
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium">Status:</span>
+                        <select
+                          className="input-field w-auto"
+                          value={lead.status}
+                          onChange={(e) =>
+                            handleUpdateLead(leadKey, { status: e.target.value })
+                          }
+                        >
+                          <option value="new">New</option>
+                          <option value="contacted">Contacted</option>
+                          <option value="qualified">Qualified</option>
+                          <option value="converted">Converted</option>
+                          <option value="lost">Lost</option>
+                        </select>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium">Last Contacted:</span>
+                        <input
+                          type="date"
+                          className="input-field w-auto"
+                          value={
+                            lead.lastContacted
+                              ? new Date(lead.lastContacted).toISOString().slice(0, 10)
+                              : ''
+                          }
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            handleUpdateLead(leadKey, {
+                              lastContacted: value ? new Date(value).toISOString() : null,
+                            });
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="btn-secondary text-xs"
+                          onClick={() =>
+                            handleUpdateLead(leadKey, { lastContacted: new Date().toISOString() })
+                          }
+                        >
+                          Set to today
+                        </button>
+                      </div>
+                      {/* <div>
+                        <span className="font-medium">Source:</span> {lead.source || 'Direct'}
+                      </div> */}
                     </div>
                   </div>
                 </div>
@@ -284,6 +357,35 @@ const AllLeads = () => {
     } catch (error) {
       console.error('Error exporting leads:', error);
       toast.error('Failed to export leads');
+    }
+  };
+
+  const handleUploadLeads = async (e) => {
+    const file = e?.target?.files?.[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      toast.error('Please select a .csv file');
+      e.target.value = '';
+      return;
+    }
+    try {
+      setUploading(true);
+      const response = await superAdminAPI.uploadLeads(file);
+      const data = response.data || {};
+      const updated = data.updated ?? 0;
+      const failed = data.failed ?? 0;
+      if (data.errors?.length) {
+        data.errors.forEach((err) => toast.error(err));
+      }
+      toast.success(`Upload complete. Updated: ${updated}, Failed: ${failed}`);
+      fetchData();
+    } catch (error) {
+      console.error('Error uploading leads:', error);
+      const msg = error.response?.data?.message || error.message || 'Failed to upload leads';
+      toast.error(msg);
+    } finally {
+      setUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -412,13 +514,31 @@ const AllLeads = () => {
             Page {page} / {totalPages}. Showing {leads.length} of {total} leads.
           </div>
         </div>
-        <button
-          onClick={handleExport}
-          className="btn-secondary flex items-center"
-        >
-          <Download className="h-4 w-4 mr-2" />
-          Export Leads
-        </button>
+        <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={handleUploadLeads}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="btn-secondary flex items-center"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            {uploading ? 'Uploading...' : 'Upload Leads'}
+          </button>
+          <button
+            onClick={handleExport}
+            className="btn-secondary flex items-center"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Leads
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -462,7 +582,7 @@ const AllLeads = () => {
               className="input-field"
             >
               <option value="all">All Landing Pages</option>
-              {Array.isArray(landingPages) && landingPages.map((page) => {
+              {activeLandingPages.map((page) => {
                 const pid = getId(page);
                 return (
                   <option key={pid} value={pid}>

@@ -12,6 +12,10 @@ const LandingPages = () => {
   const [editingPage, setEditingPage] = useState(null);
   const [showFormConfig, setShowFormConfig] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [paginationInfo, setPaginationInfo] = useState({});
   const [formData, setFormData] = useState({
     name: '',
     url: '',
@@ -47,16 +51,66 @@ const LandingPages = () => {
     options: []
   });
 
+  // UTM generator state
+  const PLATFORM_OPTIONS = [
+    { value: 'facebook', label: 'Facebook' },
+    { value: 'instagram', label: 'Instagram' },
+    { value: 'youtube', label: 'YouTube' },
+    { value: 'google', label: 'Google Ads' },
+    { value: 'linkedin', label: 'LinkedIn' },
+    { value: 'twitter', label: 'Twitter / X' },
+  ];
+
+  const [utmConfig, setUtmConfig] = useState({
+    platform: 'facebook',
+    campaign: '',
+    medium: 'social',
+    baseUrl: '',
+    pageName: '',
+  });
+  const [showUtmModal, setShowUtmModal] = useState(false);
+
+  const getId = (obj) =>
+    typeof obj === 'string' ? obj : (obj && (obj._id || obj.id)) || '';
+
+  const buildUtmUrl = (baseUrl, { platform, medium, campaign }) => {
+    try {
+      if (!baseUrl || !platform) return '';
+      const urlObj = new URL(baseUrl);
+      urlObj.searchParams.set('utm_source', platform);
+      urlObj.searchParams.set('utm_medium', medium || 'social');
+      if (campaign) {
+        urlObj.searchParams.set('utm_campaign', campaign);
+      } else {
+        urlObj.searchParams.delete('utm_campaign');
+      }
+      return urlObj.toString();
+    } catch (err) {
+      console.error('Invalid URL for UTM generation:', baseUrl, err);
+      return baseUrl || '';
+    }
+  };
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
+
   useEffect(() => {
     fetchLandingPages();
-  }, []);
+  }, [page, limit, searchTerm]);
 
   const fetchLandingPages = async () => {
     try {
       setLoading(true);
-      const response = await superAdminAPI.getLandingPages();
+      const response = await superAdminAPI.getLandingPages({
+        page,
+        limit,
+        search: searchTerm !== '' ? searchTerm : undefined,
+      });
       const pagesArray = response.data.data || response.data;
       setLandingPages(pagesArray);
+      setTotal(response.data.total || response.data.count || pagesArray.length);
+      setPaginationInfo(response.data.pagination || {});
     } catch (error) {
       console.error('Error fetching landing pages:', error);
       toast.error('Failed to load landing pages');
@@ -68,7 +122,7 @@ const LandingPages = () => {
   const onSubmit = async (data) => {
     try {
       if (editingPage) {
-        await superAdminAPI.updateLandingPage(editingPage.id, data);
+        await superAdminAPI.updateLandingPage(getId(editingPage), data);
         toast.success('Landing page updated successfully');
       } else {
         await superAdminAPI.createLandingPage(data);
@@ -103,6 +157,10 @@ const LandingPages = () => {
   };
 
   const handleDelete = async (id) => {
+    if (!id) {
+      toast.error('Invalid landing page');
+      return;
+    }
     if (window.confirm('Are you sure you want to delete this landing page?')) {
       try {
         await superAdminAPI.deleteLandingPage(id);
@@ -117,9 +175,10 @@ const LandingPages = () => {
 
   const handleFormConfig = async (page) => {
     try {
-      const response = await superAdminAPI.getLandingPageFormConfig(page.id);
+      const pid = getId(page);
+      const response = await superAdminAPI.getLandingPageFormConfig(pid);
       setFormConfig(response.data.data);
-      setShowFormConfig(page.id);
+      setShowFormConfig(pid);
     } catch (error) {
       console.error('Error fetching form config:', error);
       toast.error('Failed to load form configuration');
@@ -333,10 +392,35 @@ const LandingPages = () => {
     </div>
   );
 
-  const filteredPages = (Array.isArray(landingPages) ? landingPages : []).filter(page =>
-    page.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    page.url.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPages = Array.isArray(landingPages) ? landingPages : [];
+
+  const onNextPage = () => {
+    if (paginationInfo.next) setPage(paginationInfo.next.page);
+  };
+
+  const onPrevPage = () => {
+    if (paginationInfo.prev) setPage(paginationInfo.prev.page);
+  };
+
+  const onPageSelect = (num) => setPage(num);
+  const totalPages = Math.ceil(total / limit) || 1;
+
+  const renderPageNumbers = () => {
+    const pagesArr = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pagesArr.push(
+        <button
+          key={i}
+          onClick={() => onPageSelect(i)}
+          className={`mx-1 rounded px-2 py-1 border ${i === page ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-900'}`}
+          disabled={i === page}
+        >
+          {i}
+        </button>
+      );
+    }
+    return pagesArr;
+  };
 
   if (loading) {
     return (
@@ -355,6 +439,9 @@ const LandingPages = () => {
           <p className="mt-1 text-sm text-gray-500">
             Manage all landing pages in your system
           </p>
+          <div className="mt-1 text-xs text-gray-500">
+            Page {page} / {totalPages}. Showing {landingPages.length} of {total} landing pages.
+          </div>
         </div>
         <button
           onClick={openCreateModal}
@@ -404,7 +491,7 @@ const LandingPages = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredPages.map((page) => (
-                <tr key={page.id} className="hover:bg-gray-50">
+                <tr key={getId(page)} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{page.name}</div>
                     <div className="text-sm text-gray-500">{page.description}</div>
@@ -448,7 +535,21 @@ const LandingPages = () => {
                         <Settings className="h-4 w-4" />
                       </button> */}
                       <button
-                        onClick={() => handleDelete(page.id)}
+                        onClick={() => {
+                          setUtmConfig((prev) => ({
+                            ...prev,
+                            baseUrl: page.url,
+                            pageName: page.name,
+                          }));
+                          setShowUtmModal(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-900 text-xs"
+                        title="Generate UTM link"
+                      >
+                        UTM Link
+                      </button>
+                      <button
+                        onClick={() => handleDelete(getId(page))}
                         className="text-red-600 hover:text-red-900"
                         title="Delete"
                       >
@@ -460,6 +561,11 @@ const LandingPages = () => {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="my-4 flex justify-center items-center space-x-1">
+          <button onClick={onPrevPage} disabled={!paginationInfo.prev} className="px-2 py-1 border rounded disabled:opacity-50">Prev</button>
+          {renderPageNumbers()}
+          <button onClick={onNextPage} disabled={!paginationInfo.next} className="px-2 py-1 border rounded disabled:opacity-50">Next</button>
         </div>
       </div>
 
@@ -549,6 +655,181 @@ const LandingPages = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* UTM Generator Modal */}
+      {showUtmModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div
+              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+              onClick={() => setShowUtmModal(false)}
+            ></div>
+
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Generate UTM link
+                    </h3>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Choose the traffic source and campaign to get a shareable tracking URL.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowUtmModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    {utmConfig.pageName && (
+                      <span className="inline-flex items-center rounded-full bg-primary-50 text-primary-700 px-3 py-1 text-xs font-medium">
+                        Page: <span className="ml-1 truncate max-w-[180px]">{utmConfig.pageName}</span>
+                      </span>
+                    )}
+                    <div>
+                      <p className="block text-xs font-medium text-gray-700 mb-1">
+                        Base URL
+                      </p>
+                      <div className="bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-[11px] text-gray-700 break-all">
+                        {utmConfig.baseUrl || 'No URL selected'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Platform (utm_source)
+                      </label>
+                      <select
+                        className="input-field text-sm"
+                        value={utmConfig.platform}
+                        onChange={(e) =>
+                          setUtmConfig((prev) => ({
+                            ...prev,
+                            platform: e.target.value,
+                          }))
+                        }
+                      >
+                        {PLATFORM_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-[11px] text-gray-400">
+                        Example: facebook, instagram, youtube
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Medium (utm_medium)
+                      </label>
+                      <input
+                        type="text"
+                        className="input-field text-sm"
+                        value={utmConfig.medium}
+                        onChange={(e) =>
+                          setUtmConfig((prev) => ({
+                            ...prev,
+                            medium: e.target.value,
+                          }))
+                        }
+                        placeholder="social"
+                      />
+                      <p className="mt-1 text-[11px] text-gray-400">
+                        Channel type, e.g. social, cpc, email
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Campaign (utm_campaign)
+                      </label>
+                      <input
+                        type="text"
+                        className="input-field text-sm"
+                        value={utmConfig.campaign}
+                        onChange={(e) =>
+                          setUtmConfig((prev) => ({
+                            ...prev,
+                            campaign: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g. holi_sale_2026"
+                      />
+                      <p className="mt-1 text-[11px] text-gray-400">
+                        Optional: specific offer or promotion name.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-medium text-gray-700">
+                        Generated URL
+                      </label>
+                      <span className="text-[11px] text-gray-400">
+                        Use this link in your ads or social posts.
+                      </span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        className="input-field text-xs flex-1"
+                        value={
+                          utmConfig.baseUrl
+                            ? buildUtmUrl(utmConfig.baseUrl, {
+                                platform: utmConfig.platform,
+                                medium: utmConfig.medium,
+                                campaign: utmConfig.campaign,
+                              })
+                            : ''
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="btn-primary text-xs whitespace-nowrap"
+                        onClick={() => {
+                          if (!utmConfig.baseUrl) return;
+                          const url = buildUtmUrl(utmConfig.baseUrl, {
+                            platform: utmConfig.platform,
+                            medium: utmConfig.medium,
+                            campaign: utmConfig.campaign,
+                          });
+                          if (!url) return;
+                          navigator.clipboard
+                            .writeText(url)
+                            .then(() => toast.success('Copied to clipboard'))
+                            .catch(() => toast.error('Failed to copy'));
+                        }}
+                      >
+                        Copy URL
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  onClick={() => setShowUtmModal(false)}
+                  className="btn-secondary sm:mt-0 sm:w-auto"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

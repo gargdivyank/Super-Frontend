@@ -47,7 +47,7 @@ export const authAPI = {
 // Super Admin API endpoints
 export const superAdminAPI = {
   // Landing Pages
-  getLandingPages: () => api.get('/super-admin/landing-pages'),
+  getLandingPages: (filters = {}) => api.get('/super-admin/landing-pages', { params: filters }),
   createLandingPage: (data) => api.post('/super-admin/landing-pages', data),
   updateLandingPage: (id, data) => api.put(`/super-admin/landing-pages/${id}`, data),
   deleteLandingPage: (id) => api.delete(`/super-admin/landing-pages/${id}`),
@@ -58,7 +58,7 @@ export const superAdminAPI = {
   testLandingPageForm: (id, formData) => api.post(`/landing-pages/${id}/test-form`, { formData }),
   
   // Sub Admins
-  getSubAdmins: () => api.get('/super-admin/sub-admins'),
+  getSubAdmins: (filters = {}) => api.get('/super-admin/sub-admins', { params: filters }),
   createSubAdmin: (data) => api.post('/super-admin/sub-admins', data),
   updateSubAdmin: (id, data) => api.put(`/super-admin/sub-admins/${id}`, data),
   deleteSubAdmin: (id) => api.delete(`/super-admin/sub-admins/${id}`),
@@ -73,6 +73,14 @@ export const superAdminAPI = {
   // All Leads
   getAllLeads: (filters = {}) => api.get('/super-admin/leads', { params: filters }),
   exportLeads: (filters = {}) => api.get('/super-admin/leads/export', { params: filters }),
+  updateLead: (id, data) => api.put(`/super-admin/leads/${id}`, data),
+  uploadLeads: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/super-admin/leads/upload', formData, {
+      headers: { 'Content-Type': undefined },
+    });
+  },
   
   // Dashboard Stats
   getDashboardStats: () => api.get('/dashboard/super-admin'),
@@ -92,6 +100,13 @@ export const subAdminAPI = {
   exportLeads: (filters = {}) => api.get('/sub-admin/leads/export', { params: filters }),
   updateLeadStatus: (id, status) => api.put(`/sub-admin/leads/${id}/status`, { status }),
   updateLead: (id, data) => api.put(`/sub-admin/leads/${id}`, data),
+  uploadLeads: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/sub-admin/leads/upload', formData, {
+      headers: { 'Content-Type': undefined },
+    });
+  },
   
   // Dashboard Stats
   getDashboardStats: () => api.get('/sub-admin/dashboard-stats'),
