@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Plus, Edit, Trash2, User, Building, Mail, Phone, Globe } from 'lucide-react';
+import { Plus, Edit, Trash2, User, Building, Globe } from 'lucide-react';
 import { superAdminAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -29,7 +29,7 @@ const SubAdmins = () => {
 
   useEffect(() => {
     fetchData();
-  }, [page, limit, searchTerm]);
+  }, [page, limit, searchTerm, fetchData]);
 
   const fetchData = async () => {
     try {

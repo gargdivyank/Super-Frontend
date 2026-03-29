@@ -5,8 +5,7 @@ import {
   Users, 
   Globe, 
   FileText, 
-  BarChart3, 
-  Settings, 
+  BarChart3,  
   LogOut,
   Menu,
   X

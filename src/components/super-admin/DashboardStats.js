@@ -3,7 +3,6 @@ import {
   Users, 
   Globe, 
   FileText, 
-  TrendingUp,
   Clock,
   CheckCircle,
   XCircle

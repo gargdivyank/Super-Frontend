@@ -43,7 +43,7 @@ const SubAdminLeads = () => {
 
   useEffect(() => {
     fetchLeads();
-  }, [page, limit, debouncedSearchTerm, statusFilter, dateFilter]);
+  }, [page, limit, debouncedSearchTerm, statusFilter, dateFilter, fetchLeads]);
 
   // Helper function to convert dateFilter to startDate/endDate
   const getDateRange = (dateFilter) => {

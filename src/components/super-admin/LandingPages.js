@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Plus, Edit, Trash2, Eye, Settings, Save, X, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Search } from 'lucide-react';
 import { superAdminAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -97,7 +97,7 @@ const LandingPages = () => {
 
   useEffect(() => {
     fetchLandingPages();
-  }, [page, limit, searchTerm]);
+  }, [page, limit, searchTerm, fetchLandingPages]);
 
   const fetchLandingPages = async () => {
     try {

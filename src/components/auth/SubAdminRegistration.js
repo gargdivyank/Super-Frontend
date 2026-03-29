@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../../contexts/AuthContext';
-import { Eye, EyeOff, Mail, Lock, User, Building, Phone } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Building } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const SubAdminRegistration = () => {
@@ -190,7 +190,7 @@ const SubAdminRegistration = () => {
                 {...register('phone', {
                   required: 'Phone number is required',
                   pattern: {
-                    value: /^[\+]?[1-9][\d]{0,15}$/,
+                    value: /^[+]?[1-9][\d]{0,15}$/,
                     message: 'Invalid phone number',
                   },
                 })}

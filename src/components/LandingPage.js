@@ -1,54 +1,51 @@
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
+// import { useForm } from 'react-hook-form';
 import {
   Mail,
   Phone,
-  User,
-  Building,
-  Send,
   CheckCircle,
   LayoutDashboard,
   Shield,
   Rocket,
 } from 'lucide-react';
-import { landingPageAPI } from '../services/api';
-import toast from 'react-hot-toast';
+// import { landingPageAPI } from '../services/api';
+// import toast from 'react-hot-toast';
 
 const LandingPage = () => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm();
+  // const {
+  //   // register,
+  //   // handleSubmit,
+  //   // reset,
+  //   formState: { errors },
+  // } = useForm();
 
-  const onSubmit = async (data) => {
-    setIsSubmitting(true);
-    try {
-      const requestPayload = {
-        ...data,
-        requestType: 'access_request',
-        status: 'pending',
-      };
+  // const onSubmit = async (data) => {
+  //   setIsSubmitting(true);
+  //   try {
+  //     const requestPayload = {
+  //       ...data,
+  //       requestType: 'access_request',
+  //       status: 'pending',
+  //     };
 
-      const landingPageId = 'demo-landing-page';
+  //     const landingPageId = 'demo-landing-page';
 
-      await landingPageAPI.submitLead(landingPageId, requestPayload);
-      setIsSubmitted(true);
-      reset();
-      toast.success(
-        'Thank you! Your access request has been submitted and is pending approval.'
-      );
-    } catch (error) {
-      console.error('Error submitting access request:', error);
-      toast.error('Failed to submit. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  //     await landingPageAPI.submitLead(landingPageId, requestPayload);
+  //     setIsSubmitted(true);
+  //     reset();
+  //     toast.success(
+  //       'Thank you! Your access request has been submitted and is pending approval.'
+  //     );
+  //   } catch (error) {
+  //     console.error('Error submitting access request:', error);
+  //     toast.error('Failed to submit. Please try again.');
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
 
   // ✅ Thank-you screen (unchanged logic, slightly refined UI)
   if (isSubmitted) {
