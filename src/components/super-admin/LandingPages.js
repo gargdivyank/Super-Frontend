@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useCallback  } from 'react';
 import { useForm } from 'react-hook-form';
 import { Plus, Edit, Trash2, Save, X, Search } from 'lucide-react';
 import { superAdminAPI } from '../../services/api';
@@ -7,20 +7,20 @@ import toast from 'react-hot-toast';
 const LandingPages = () => {
   const [landingPages, setLandingPages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  // const [showForm, setShowForm] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingPage, setEditingPage] = useState(null);
   const [showFormConfig, setShowFormConfig] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [total, setTotal] = useState(0);
   const [paginationInfo, setPaginationInfo] = useState({});
-  const [formData, setFormData] = useState({
-    name: '',
-    url: '',
-    description: ''
-  });
+  // const [formData, setFormData] = useState({
+  //   name: '',
+  //   url: '',
+  //   description: ''
+  // });
 
   const {
     register,
@@ -95,11 +95,7 @@ const LandingPages = () => {
     setPage(1);
   }, [searchTerm]);
 
-  useEffect(() => {
-    fetchLandingPages();
-  }, [page, limit, searchTerm, fetchLandingPages]);
-
-  const fetchLandingPages = async () => {
+  const fetchLandingPages = useCallback(async () => {
     try {
       setLoading(true);
       const response = await superAdminAPI.getLandingPages({
@@ -117,7 +113,31 @@ const LandingPages = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, limit, searchTerm]);
+
+  useEffect(() => {
+    fetchLandingPages();
+  }, [fetchLandingPages]);
+
+  // const fetchLandingPages = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const response = await superAdminAPI.getLandingPages({
+  //       page,
+  //       limit,
+  //       search: searchTerm !== '' ? searchTerm : undefined,
+  //     });
+  //     const pagesArray = response.data.data || response.data;
+  //     setLandingPages(pagesArray);
+  //     setTotal(response.data.total || response.data.count || pagesArray.length);
+  //     setPaginationInfo(response.data.pagination || {});
+  //   } catch (error) {
+  //     console.error('Error fetching landing pages:', error);
+  //     toast.error('Failed to load landing pages');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const onSubmit = async (data) => {
     try {
@@ -173,17 +193,17 @@ const LandingPages = () => {
     }
   };
 
-  const handleFormConfig = async (page) => {
-    try {
-      const pid = getId(page);
-      const response = await superAdminAPI.getLandingPageFormConfig(pid);
-      setFormConfig(response.data.data);
-      setShowFormConfig(pid);
-    } catch (error) {
-      console.error('Error fetching form config:', error);
-      toast.error('Failed to load form configuration');
-    }
-  };
+  // const handleFormConfig = async (page) => {
+  //   try {
+  //     const pid = getId(page);
+  //     const response = await superAdminAPI.getLandingPageFormConfig(pid);
+  //     setFormConfig(response.data.data);
+  //     setShowFormConfig(pid);
+  //   } catch (error) {
+  //     console.error('Error fetching form config:', error);
+  //     toast.error('Failed to load form configuration');
+  //   }
+  // };
 
   const saveFormConfig = async () => {
     try {

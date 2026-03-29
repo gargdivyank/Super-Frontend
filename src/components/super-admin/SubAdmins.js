@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { Plus, Edit, Trash2, User, Building, Globe } from 'lucide-react';
 import { superAdminAPI } from '../../services/api';
@@ -12,7 +12,7 @@ const SubAdmins = () => {
   const [editingAdmin, setEditingAdmin] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [total, setTotal] = useState(0);
   const [paginationInfo, setPaginationInfo] = useState({});
 
@@ -27,11 +27,8 @@ const SubAdmins = () => {
     setPage(1);
   }, [searchTerm]);
 
-  useEffect(() => {
-    fetchData();
-  }, [page, limit, searchTerm, fetchData]);
-
-  const fetchData = async () => {
+  // Memoize the fetchData function to prevent unnecessary re-renders
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const [adminsResponse, pagesResponse] = await Promise.all([
@@ -60,7 +57,42 @@ const SubAdmins = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, limit, searchTerm]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // const fetchData = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const [adminsResponse, pagesResponse] = await Promise.all([
+  //       superAdminAPI.getSubAdmins({
+  //         page,
+  //         limit,
+  //         search: searchTerm !== '' ? searchTerm : undefined,
+  //       }),
+  //       superAdminAPI.getLandingPages({ status: 'active', limit: 1000 }),
+  //     ]);
+      
+  //     console.log('SubAdmins API Response:', adminsResponse);
+  //     console.log('LandingPages API Response:', pagesResponse);
+      
+  //     // Check if response.data.data exists, otherwise use response.data
+  //     const adminsArray = adminsResponse.data.data || adminsResponse.data;
+  //     const pagesArray = pagesResponse.data.data || pagesResponse.data;
+      
+  //     setSubAdmins(adminsArray);
+  //     setLandingPages(pagesArray);
+  //     setTotal(adminsResponse.data.total || adminsResponse.data.count || adminsArray.length);
+  //     setPaginationInfo(adminsResponse.data.pagination || {});
+  //   } catch (error) {
+  //     console.error('Error fetching data:', error);
+  //     toast.error('Failed to load sub admins');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const onSubmit = async (data) => {
     try {

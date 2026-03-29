@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { User, Mail, Building, Phone, Save, Edit } from 'lucide-react';
 import { subAdminAPI } from '../../services/api';
@@ -11,7 +11,7 @@ const SubAdminProfile = () => {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const { user, updateUser } = useAuth();
+  const { updateUser } = useAuth();
 
   const {
     register,
@@ -20,25 +20,25 @@ const SubAdminProfile = () => {
     formState: { errors },
   } = useForm();
 
-  useEffect(() => {
-    fetchProfile();
-    fetchAssignedLandingPage();
-  }, [fetchProfile]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       setLoading(true);
       const response = await subAdminAPI.getProfile();
       const userData = response.data.data;
       setProfile(userData);
-      reset(userData);
+      reset(userData); // Assuming 'reset' is defined elsewhere
     } catch (error) {
       console.error('Error fetching profile:', error);
       toast.error('Failed to load profile');
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // Empty array means it will only be recreated if dependencies change (none here)
+
+  useEffect(() => {
+    fetchProfile();
+    fetchAssignedLandingPage(); // Assuming this function is defined elsewhere
+  }, [fetchProfile]);
 
   const fetchAssignedLandingPage = async () => {
     try {

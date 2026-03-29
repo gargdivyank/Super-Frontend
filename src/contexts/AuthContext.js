@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
   // initialized: boolean -> true after we checked localStorage/token on mount
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {

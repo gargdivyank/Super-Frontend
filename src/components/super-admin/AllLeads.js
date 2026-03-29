@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Download, Upload, Search, Filter, Calendar, FileText, Globe, ChevronDown, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect,useCallback } from 'react';
+import { Download, Upload, Search, FileText, Globe, ChevronDown, ChevronRight } from 'lucide-react';
 import { superAdminAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -15,13 +15,54 @@ const AllLeads = () => {
  
   // pagination
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [total, setTotal] = useState(0);
   const [paginationInfo, setPaginationInfo] = useState({});
   const [uploading, setUploading] = useState(false);
   const fileInputRef = React.useRef(null);
 
 
+  // Memoize the fetchData function to prevent unnecessary re-creations
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const dateRange = getDateRange(dateFilter); // assuming getDateRange is defined elsewhere
+      const filters = {
+        page,
+        limit,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        landingPage: landingPageFilter !== 'all' ? landingPageFilter : undefined,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+        search: searchTerm !== '' ? searchTerm : undefined,
+      };
+
+      const [leadsResponse, pagesResponse] = await Promise.all([
+        superAdminAPI.getAllLeads(filters),  // assuming superAdminAPI is imported
+        superAdminAPI.getLandingPages(),
+      ]);
+
+      const leadsArray = leadsResponse.data.data || leadsResponse.data;
+      const pagesArray = pagesResponse.data.data || pagesResponse.data;
+
+      setLeads(leadsArray);
+      setLandingPages(pagesArray);
+      setTotal(leadsResponse.data.total || leadsResponse.data.count || leadsArray.length);
+      setPaginationInfo(leadsResponse.data.pagination || {});
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error('Failed to load leads');
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    page, 
+    limit, 
+    statusFilter, 
+    landingPageFilter, 
+    dateFilter, 
+    searchTerm
+  ]);
 
   // When filter changes, reset to page 1
   useEffect(() => {
@@ -30,7 +71,7 @@ const AllLeads = () => {
 
   useEffect(() => {
     fetchData();
-  }, [page, limit, statusFilter, landingPageFilter, dateFilter, searchTerm]);
+  }, [fetchData]);
 
   // Helper function to convert dateFilter to startDate/endDate
   const getDateRange = (dateFilter) => {
@@ -64,46 +105,46 @@ const AllLeads = () => {
     }
   };
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const dateRange = getDateRange(dateFilter);
-      const filters = {
-        page,
-        limit,
-        status: statusFilter !== 'all' ? statusFilter : undefined,
-        landingPage: landingPageFilter !== 'all' ? landingPageFilter : undefined,
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-        search: searchTerm !== '' ? searchTerm : undefined
-      };
-      const [leadsResponse, pagesResponse] = await Promise.all([
-        superAdminAPI.getAllLeads(filters),
-        superAdminAPI.getLandingPages(),
-      ]);
-      const leadsArray = leadsResponse.data.data || leadsResponse.data;
-      const pagesArray = pagesResponse.data.data || pagesResponse.data;
-      setLeads(leadsArray);
-      setLandingPages(pagesArray);
-      setTotal(leadsResponse.data.total || leadsResponse.data.count || leadsArray.length);
-      setPaginationInfo(leadsResponse.data.pagination || {});
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('Failed to load leads');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const fetchData = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const dateRange = getDateRange(dateFilter);
+  //     const filters = {
+  //       page,
+  //       limit,
+  //       status: statusFilter !== 'all' ? statusFilter : undefined,
+  //       landingPage: landingPageFilter !== 'all' ? landingPageFilter : undefined,
+  //       startDate: dateRange.startDate,
+  //       endDate: dateRange.endDate,
+  //       search: searchTerm !== '' ? searchTerm : undefined
+  //     };
+  //     const [leadsResponse, pagesResponse] = await Promise.all([
+  //       superAdminAPI.getAllLeads(filters),
+  //       superAdminAPI.getLandingPages(),
+  //     ]);
+  //     const leadsArray = leadsResponse.data.data || leadsResponse.data;
+  //     const pagesArray = pagesResponse.data.data || pagesResponse.data;
+  //     setLeads(leadsArray);
+  //     setLandingPages(pagesArray);
+  //     setTotal(leadsResponse.data.total || leadsResponse.data.count || leadsArray.length);
+  //     setPaginationInfo(leadsResponse.data.pagination || {});
+  //   } catch (error) {
+  //     console.error('Error fetching data:', error);
+  //     toast.error('Failed to load leads');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  const toggleLeadExpansion = (leadId) => {
-    const newExpanded = new Set(expandedLeads);
-    if (newExpanded.has(leadId)) {
-      newExpanded.delete(leadId);
-    } else {
-      newExpanded.add(leadId);
-    }
-    setExpandedLeads(newExpanded);
-  }
+  // const toggleLeadExpansion = (leadId) => {
+  //   const newExpanded = new Set(expandedLeads);
+  //   if (newExpanded.has(leadId)) {
+  //     newExpanded.delete(leadId);
+  //   } else {
+  //     newExpanded.add(leadId);
+  //   }
+  //   setExpandedLeads(newExpanded);
+  // }
 
 
   const getId = (obj) =>

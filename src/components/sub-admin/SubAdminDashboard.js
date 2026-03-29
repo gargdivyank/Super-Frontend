@@ -16,7 +16,7 @@ import SubAdminStats from './SubAdminStats';
 
 const SubAdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [landingPage, setLandingPage] = useState(null);
+  const [ setLandingPage] = useState(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 

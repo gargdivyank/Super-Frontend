@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Download, Upload, Search, Filter, Calendar, FileText, ChevronDown, ChevronRight } from 'lucide-react';
+import { Download, Upload, Search, FileText, ChevronDown, ChevronRight } from 'lucide-react';
 import { subAdminAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -12,7 +12,7 @@ const SubAdminLeads = () => {
   const [expandedLeads, setExpandedLeads] = useState(new Set());
   // Pagination state
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [total, setTotal] = useState(0);
   const [paginationInfo, setPaginationInfo] = useState({});
   const [uploading, setUploading] = useState(false);
@@ -41,9 +41,42 @@ const SubAdminLeads = () => {
     setPage(1);
   }, [debouncedSearchTerm, statusFilter, dateFilter]);
 
+  // Memoize fetchLeads using useCallback
+  const fetchLeads = useCallback(async () => {
+    try {
+      setLoading(true);
+      const dateRange = getDateRange(dateFilter); // assuming getDateRange is defined elsewhere
+      const filters = {
+        page,
+        limit,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+        search: debouncedSearchTerm !== '' ? debouncedSearchTerm : undefined,
+      };
+
+      const response = await subAdminAPI.getLeads(filters);
+
+      const leadsArray = response.data.data || response.data;
+      setLeads(leadsArray);
+      setTotal(response.data.total || response.data.count || leadsArray.length);
+      setPaginationInfo(response.data.pagination || {});
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+      toast.error('Failed to load leads');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, limit, debouncedSearchTerm, statusFilter, dateFilter]);  // Dependencies for the fetchLeads function
+
+  // UseEffect hook to trigger fetchLeads when dependencies change
   useEffect(() => {
     fetchLeads();
-  }, [page, limit, debouncedSearchTerm, statusFilter, dateFilter, fetchLeads]);
+  }, [fetchLeads]);
+
+  // useEffect(() => {
+  //   fetchLeads();
+  // }, [page, limit, debouncedSearchTerm, statusFilter, dateFilter, fetchLeads]);
 
   // Helper function to convert dateFilter to startDate/endDate
   const getDateRange = (dateFilter) => {
@@ -77,30 +110,30 @@ const SubAdminLeads = () => {
     }
   };
 
-  const fetchLeads = async () => {
-    try {
-      setLoading(true);
-      const dateRange = getDateRange(dateFilter);
-      const filters = {
-        page,
-        limit,
-        status: statusFilter !== 'all' ? statusFilter : undefined,
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-        search: debouncedSearchTerm !== '' ? debouncedSearchTerm : undefined,
-      };
-      const response = await subAdminAPI.getLeads(filters);
-      const leadsArray = response.data.data || response.data;
-      setLeads(leadsArray);
-      setTotal(response.data.total || response.data.count || leadsArray.length);
-      setPaginationInfo(response.data.pagination || {});
-    } catch (error) {
-      console.error('Error fetching leads:', error);
-      toast.error('Failed to load leads');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const fetchLeads = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const dateRange = getDateRange(dateFilter);
+  //     const filters = {
+  //       page,
+  //       limit,
+  //       status: statusFilter !== 'all' ? statusFilter : undefined,
+  //       startDate: dateRange.startDate,
+  //       endDate: dateRange.endDate,
+  //       search: debouncedSearchTerm !== '' ? debouncedSearchTerm : undefined,
+  //     };
+  //     const response = await subAdminAPI.getLeads(filters);
+  //     const leadsArray = response.data.data || response.data;
+  //     setLeads(leadsArray);
+  //     setTotal(response.data.total || response.data.count || leadsArray.length);
+  //     setPaginationInfo(response.data.pagination || {});
+  //   } catch (error) {
+  //     console.error('Error fetching leads:', error);
+  //     toast.error('Failed to load leads');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const handleExport = async () => {
     try {
@@ -172,15 +205,15 @@ const SubAdminLeads = () => {
     }
   };
 
-  const toggleLeadExpansion = (leadId) => {
-    const newExpanded = new Set(expandedLeads);
-    if (newExpanded.has(leadId)) {
-      newExpanded.delete(leadId);
-    } else {
-      newExpanded.add(leadId);
-    }
-    setExpandedLeads(newExpanded);
-  };
+  // const toggleLeadExpansion = (leadId) => {
+  //   const newExpanded = new Set(expandedLeads);
+  //   if (newExpanded.has(leadId)) {
+  //     newExpanded.delete(leadId);
+  //   } else {
+  //     newExpanded.add(leadId);
+  //   }
+  //   setExpandedLeads(newExpanded);
+  // };
 
   const getId = (obj) =>
     typeof obj === 'string' ? obj : (obj && (obj._id || obj.id)) || '';
