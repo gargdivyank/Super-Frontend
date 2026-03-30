@@ -162,9 +162,9 @@ const SubAdminDashboard = () => {
               <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" />
               <div className="flex items-center gap-x-4">
                 <span className="text-sm text-gray-700">Welcome, {user?.name}</span>
-                {/* {landingPage && (
+                {landingPage && (
                   <span className="text-sm text-gray-500">| {landingPage.name}</span>
-                )} */}
+                )}
               </div>
             </div>
           </div>
