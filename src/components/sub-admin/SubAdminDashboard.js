@@ -20,19 +20,37 @@ const SubAdminDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchLandingPage();
-  }, []);
+  // useEffect(() => {
+  //   fetchLandingPage();
+  // }, []);
 
-  const fetchLandingPage = async () => {
+  // const fetchLandingPage = async () => {
+  //   try {
+  //     const response = await subAdminAPI.getLandingPage();
+  //     const landingPageData = response.data.data || response.data;
+  //     setLandingPage(landingPageData && landingPageData.length > 0 ? landingPageData[0] : null);
+  //   } catch (error) {
+  //     console.error('Error fetching landing page:', error);
+  //   }
+  // };
+  const fetchLandingPage = useCallback(async () => {
     try {
       const response = await subAdminAPI.getLandingPage();
       const landingPageData = response.data.data || response.data;
-      setLandingPage(landingPageData && landingPageData.length > 0 ? landingPageData[0] : null);
+  
+      setLandingPage(
+        landingPageData && landingPageData.length > 0
+          ? landingPageData[0]
+          : null
+      );
     } catch (error) {
       console.error('Error fetching landing page:', error);
     }
-  };
+  }, []);
+  
+  useEffect(() => {
+    fetchLandingPage();
+  }, [fetchLandingPage]);
 
   const handleLogout = () => {
     logout();

@@ -26,30 +26,31 @@ const SubAdminProfile = () => {
       const response = await subAdminAPI.getProfile();
       const userData = response.data.data;
       setProfile(userData);
-      reset(userData); // Assuming 'reset' is defined elsewhere
+      reset(userData);
     } catch (error) {
       console.error('Error fetching profile:', error);
       toast.error('Failed to load profile');
     } finally {
       setLoading(false);
     }
-  }, []); // Empty array means it will only be recreated if dependencies change (none here)
-
-  useEffect(() => {
-    fetchProfile();
-    fetchAssignedLandingPage(); // Assuming this function is defined elsewhere
-  }, [fetchProfile]);
-
-  const fetchAssignedLandingPage = async () => {
+  }, [reset]);
+  
+  const fetchAssignedLandingPage = useCallback(async () => {
     try {
       const response = await subAdminAPI.getLandingPage();
-      // response.data.data is an array of landing pages
       const pages = response.data.data;
-      setAssignedLandingPage(Array.isArray(pages) && pages.length > 0 ? pages[0] : null);
+      setAssignedLandingPage(
+        Array.isArray(pages) && pages.length > 0 ? pages[0] : null
+      );
     } catch (error) {
       setAssignedLandingPage(null);
     }
-  };
+  }, []);
+  
+  useEffect(() => {
+    fetchProfile();
+    fetchAssignedLandingPage();
+  }, [fetchProfile, fetchAssignedLandingPage]);
 
   const onSubmit = async (data) => {
     try {

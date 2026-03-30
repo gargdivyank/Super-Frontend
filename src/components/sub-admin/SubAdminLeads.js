@@ -255,45 +255,45 @@ const SubAdminLeads = () => {
     );
   };
 
-  const filteredLeads = (Array.isArray(leads) ? leads : []).filter(lead => {
-    const fullName = `${lead.firstName || ''} ${lead.lastName || ''}`.toLowerCase();
-    const matchesSearch = 
-      fullName.includes(searchTerm.toLowerCase()) ||
-      lead.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (lead.dynamicFields && Object.values(lead.dynamicFields).some(value => 
-        value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-      ));
+  // const filteredLeads = (Array.isArray(leads) ? leads : []).filter(lead => {
+  //   const fullName = `${lead.firstName || ''} ${lead.lastName || ''}`.toLowerCase();
+  //   const matchesSearch = 
+  //     fullName.includes(searchTerm.toLowerCase()) ||
+  //     lead.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     lead.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     lead.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     lead.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     (lead.dynamicFields && Object.values(lead.dynamicFields).some(value => 
+  //       value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+  //     ));
     
-    const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
+  //   const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
     
-    let matchesDate = true;
-    if (dateFilter !== 'all') {
-      const leadDate = new Date(lead.createdAt);
-      const today = new Date();
+  //   let matchesDate = true;
+  //   if (dateFilter !== 'all') {
+  //     const leadDate = new Date(lead.createdAt);
+  //     const today = new Date();
       
-      switch (dateFilter) {
-        case 'today':
-          matchesDate = leadDate.toDateString() === today.toDateString();
-          break;
-        case 'week':
-          const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-          matchesDate = leadDate >= weekAgo;
-          break;
-        case 'month':
-          const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-          matchesDate = leadDate >= monthAgo;
-          break;
-        default:
-          matchesDate = true;
-      }
-    }
+  //     switch (dateFilter) {
+  //       case 'today':
+  //         matchesDate = leadDate.toDateString() === today.toDateString();
+  //         break;
+  //       case 'week':
+  //         const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+  //         matchesDate = leadDate >= weekAgo;
+  //         break;
+  //       case 'month':
+  //         const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+  //         matchesDate = leadDate >= monthAgo;
+  //         break;
+  //       default:
+  //         matchesDate = true;
+  //     }
+  //   }
     
-    return matchesSearch && matchesStatus && matchesDate;
-  });
+  //   return matchesSearch && matchesStatus && matchesDate;
+  // });
 
   const getStatusBadge = (status) => {
     const statusConfig = {
