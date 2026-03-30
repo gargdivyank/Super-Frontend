@@ -16,7 +16,7 @@ import SubAdminStats from './SubAdminStats';
 
 const SubAdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [ setLandingPage] = useState(null);
+  const [landingPage, setLandingPage] = useState(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -46,7 +46,7 @@ const SubAdminDashboard = () => {
     } catch (error) {
       console.error('Error fetching landing page:', error);
     }
-  }, []);
+  }, [setLandingPage]);
   
   useEffect(() => {
     fetchLandingPage();
