@@ -50,14 +50,14 @@ const DashboardStats = () => {
       const landingPagesArray = landingPages.data.data || landingPages.data;
       const subAdminsArray = subAdmins.data.data || subAdmins.data;
       const leadsArray = leads.data.data || leads.data;
-      const accessRequestsArray = accessRequests.data.data || accessRequests.data;
+      // const accessRequestsArray = accessRequests.data.data || accessRequests.data;
 
       // Use total from API response for leads (handles pagination)
       const totalLeads = leads.data.total || leads.data.count || leadsArray.length;
 
-      const pendingRequests = accessRequestsArray.filter(req => req.status === 'pending').length;
-      const approvedRequests = accessRequestsArray.filter(req => req.status === 'approved').length;
-      const rejectedRequests = accessRequestsArray.filter(req => req.status === 'rejected').length;
+      const pendingRequests = subAdminsArray.filter(admin => admin.status === 'pending').length;
+      const approvedRequests = subAdminsArray.filter(admin => admin.status === 'approved').length;
+      const rejectedRequests = subAdminsArray.filter(admin => admin.status === 'rejected').length;
 
       console.log('Setting dashboard stats:', {
         totalLandingPages: landingPagesArray.length,
@@ -107,21 +107,21 @@ const DashboardStats = () => {
       textColor: 'text-purple-600',
     },
     {
-      name: 'Pending Requests',
+      name: 'Pending Sub Admins',
       value: stats.pendingRequests || 0,
       icon: Clock,
       color: 'bg-yellow-500',
       textColor: 'text-yellow-600',
     },
     {
-      name: 'Approved Requests',
+      name: 'Approved Sub Admins',
       value: stats.approvedRequests || 0,
       icon: CheckCircle,
       color: 'bg-green-500',
       textColor: 'text-green-600',
     },
     {
-      name: 'Rejected Requests',
+      name: 'Rejected Sub Admins',
       value: stats.rejectedRequests || 0,
       icon: XCircle,
       color: 'bg-red-500',

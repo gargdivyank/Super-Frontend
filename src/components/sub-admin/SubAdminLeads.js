@@ -652,9 +652,9 @@ const SubAdminLeads = () => {
         <div className="card">
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">
-              {leads.filter(lead => lead.status === 'converted').length}
+              {leads.filter(lead => lead.status === 'contacted').length}
             </div>
-            <div className="text-sm text-gray-500">Converted</div>
+            <div className="text-sm text-gray-500">Contacted</div>
           </div>
         </div>
         <div className="card">

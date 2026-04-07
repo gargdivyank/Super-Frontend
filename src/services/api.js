@@ -2,8 +2,8 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  // baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
-  baseURL: process.env.REACT_APP_API_URL || 'https://super-backend-eosin.vercel.app/api',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+  // baseURL: process.env.REACT_APP_API_URL || 'https://super-backend-eosin.vercel.app/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -84,6 +84,9 @@ export const superAdminAPI = {
   
   // Dashboard Stats
   getDashboardStats: () => api.get('/dashboard/super-admin'),
+
+  // Analytics (leads by landing page)
+  getAnalytics: (params = {}) => api.get('/super-admin/analytics', { params }),
 };
 
 // Sub Admin API endpoints
@@ -110,6 +113,9 @@ export const subAdminAPI = {
   
   // Dashboard Stats
   getDashboardStats: () => api.get('/sub-admin/dashboard-stats'),
+
+  // Analytics (assigned landing page(s) only — no query params)
+  getAnalytics: () => api.get('/sub-admin/analytics'),
   
   // Access Requests
   createAccessRequest: (landingPageId, message) => api.post('/access-requests', { landingPageId, message }),
