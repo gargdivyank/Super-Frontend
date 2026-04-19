@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
+import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   Users,
@@ -17,6 +17,7 @@ import SubAdmins from './SubAdmins';
 import AllLeads from './AllLeads';
 import DashboardStats from './DashboardStats';
 import Analytics from './Analytics';
+import { hasPermission, PERMISSIONS } from '../../constants/permissions';
 
 const SuperAdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -29,13 +30,18 @@ const SuperAdminDashboard = () => {
   };
 
   const navigation = [
-    { name: 'Dashboard', href: '/super-admin', icon: BarChart3, component: DashboardStats },
-    { name: 'Landing Pages', href: '/super-admin/landing-pages', icon: Globe, component: LandingPages },
-    { name: 'Sub Admins', href: '/super-admin/sub-admins', icon: Users, component: SubAdmins },
+    { name: 'Dashboard', href: '/super-admin', icon: BarChart3, component: DashboardStats, permission: PERMISSIONS.DASHBOARD_VIEW },
+    { name: 'Landing Pages', href: '/super-admin/landing-pages', icon: Globe, component: LandingPages, permission: PERMISSIONS.LANDING_PAGES_VIEW },
+    { name: 'Sub Admins', href: '/super-admin/sub-admins', icon: Users, component: SubAdmins, permission: PERMISSIONS.SUB_ADMINS_VIEW },
     // { name: 'Access Requests', href: '/super-admin/access-requests', icon: FileText, component: AccessRequests },
-    { name: 'All Leads', href: '/super-admin/leads', icon: FileText, component: AllLeads },
-    { name: 'Analytics', href: '/super-admin/analytics', icon: LineChart, component: Analytics },
+    { name: 'All Leads', href: '/super-admin/leads', icon: FileText, component: AllLeads, permission: PERMISSIONS.LEADS_VIEW },
+    { name: 'Analytics', href: '/super-admin/analytics', icon: LineChart, component: Analytics, permission: PERMISSIONS.ANALYTICS_VIEW },
   ];
+  const allowedNavigation = navigation.filter((item) => hasPermission(user, item.permission));
+  const firstAllowedPath = useMemo(
+    () => allowedNavigation[0]?.href || '/login',
+    [allowedNavigation]
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -56,7 +62,7 @@ const SuperAdminDashboard = () => {
 
     {/* Navigation Items */}
     <nav className="flex-1 space-y-1 px-2 py-4">
-      {navigation.map((item) => (
+      {allowedNavigation.map((item) => (
         <button
           key={item.name}
           onClick={() => {
@@ -112,7 +118,7 @@ const SuperAdminDashboard = () => {
 
     {/* Sidebar Navigation */}
     <nav className="flex-1 space-y-1 px-2 py-4">
-      {navigation.map((item) => (
+      {allowedNavigation.map((item) => (
         <button
           key={item.name}
           onClick={() => navigate(item.href)}
@@ -183,11 +189,26 @@ const SuperAdminDashboard = () => {
         <main className="py-6">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <Routes>
-              <Route path="/" element={<DashboardStats />} />
-              <Route path="/landing-pages" element={<LandingPages />} />
-              <Route path="/sub-admins" element={<SubAdmins />} />
-              <Route path="/leads" element={<AllLeads />} />
-              <Route path="/analytics" element={<Analytics />} />
+              <Route
+                path="/"
+                element={hasPermission(user, PERMISSIONS.DASHBOARD_VIEW) ? <DashboardStats /> : <Navigate to={firstAllowedPath} replace />}
+              />
+              <Route
+                path="/landing-pages"
+                element={hasPermission(user, PERMISSIONS.LANDING_PAGES_VIEW) ? <LandingPages /> : <Navigate to={firstAllowedPath} replace />}
+              />
+              <Route
+                path="/sub-admins"
+                element={hasPermission(user, PERMISSIONS.SUB_ADMINS_VIEW) ? <SubAdmins /> : <Navigate to={firstAllowedPath} replace />}
+              />
+              <Route
+                path="/leads"
+                element={hasPermission(user, PERMISSIONS.LEADS_VIEW) ? <AllLeads /> : <Navigate to={firstAllowedPath} replace />}
+              />
+              <Route
+                path="/analytics"
+                element={hasPermission(user, PERMISSIONS.ANALYTICS_VIEW) ? <Analytics /> : <Navigate to={firstAllowedPath} replace />}
+              />
             </Routes>
           </div>
         </main>

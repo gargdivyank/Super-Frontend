@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { subAdminAPI } from '../../services/api';
 import { 
   FileText, 
   BarChart3, 
   User,
+  Users,
   LogOut,
   Menu,
   X,
@@ -15,6 +16,8 @@ import SubAdminLeads from './SubAdminLeads';
 import SubAdminProfile from './SubAdminProfile';
 import SubAdminStats from './SubAdminStats';
 import SubAdminAnalytics from './SubAdminAnalytics';
+import SubAdminSubAdmins from './SubAdminSubAdmins';
+import { hasPermission, PERMISSIONS } from '../../constants/permissions';
 
 const SubAdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -60,11 +63,14 @@ const SubAdminDashboard = () => {
   };
 
   const navigation = [
-    { name: 'Dashboard', href: '/sub-admin', icon: BarChart3, component: SubAdminStats },
-    { name: 'Leads', href: '/sub-admin/leads', icon: FileText, component: SubAdminLeads },
-    { name: 'Analytics', href: '/sub-admin/analytics', icon: LineChart, component: SubAdminAnalytics },
-    { name: 'Profile', href: '/sub-admin/profile', icon: User, component: SubAdminProfile },
+    { name: 'Dashboard', href: '/sub-admin', icon: BarChart3, component: SubAdminStats, permission: PERMISSIONS.DASHBOARD_VIEW },
+    { name: 'Leads', href: '/sub-admin/leads', icon: FileText, component: SubAdminLeads, permission: PERMISSIONS.LEADS_VIEW },
+    { name: 'Analytics', href: '/sub-admin/analytics', icon: LineChart, component: SubAdminAnalytics, permission: PERMISSIONS.ANALYTICS_VIEW },
+    { name: 'Sub Admins / Users', href: '/sub-admin/sub-admins', icon: Users, component: SubAdminSubAdmins, permission: PERMISSIONS.SUB_ADMINS_VIEW },
+    { name: 'Profile', href: '/sub-admin/profile', icon: User, component: SubAdminProfile, permission: PERMISSIONS.PROFILE_VIEW },
   ];
+  const allowedNavigation = navigation.filter((item) => hasPermission(user, item.permission));
+  const firstAllowedPath = allowedNavigation[0]?.href || '/login';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -82,7 +88,7 @@ const SubAdminDashboard = () => {
             </button>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.map((item) => (
+            {allowedNavigation.map((item) => (
               <button
                 key={item.name}
                 onClick={() => {
@@ -130,7 +136,7 @@ const SubAdminDashboard = () => {
             <h1 className="text-xl font-semibold text-white">Sub Admin</h1>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.map((item) => (
+            {allowedNavigation.map((item) => (
               <button
                 key={item.name}
                 onClick={() => navigate(item.href)}
@@ -201,10 +207,26 @@ const SubAdminDashboard = () => {
         <main className="py-6">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <Routes>
-              <Route path="/" element={<SubAdminStats />} />
-              <Route path="/leads" element={<SubAdminLeads />} />
-              <Route path="/analytics" element={<SubAdminAnalytics />} />
-              <Route path="/profile" element={<SubAdminProfile />} />
+              <Route
+                path="/"
+                element={hasPermission(user, PERMISSIONS.DASHBOARD_VIEW) ? <SubAdminStats /> : <Navigate to={firstAllowedPath} replace />}
+              />
+              <Route
+                path="/leads"
+                element={hasPermission(user, PERMISSIONS.LEADS_VIEW) ? <SubAdminLeads /> : <Navigate to={firstAllowedPath} replace />}
+              />
+              <Route
+                path="/analytics"
+                element={hasPermission(user, PERMISSIONS.ANALYTICS_VIEW) ? <SubAdminAnalytics /> : <Navigate to={firstAllowedPath} replace />}
+              />
+              <Route
+                path="/profile"
+                element={hasPermission(user, PERMISSIONS.PROFILE_VIEW) ? <SubAdminProfile /> : <Navigate to={firstAllowedPath} replace />}
+              />
+              <Route
+                path="/sub-admins"
+                element={hasPermission(user, PERMISSIONS.SUB_ADMINS_VIEW) ? <SubAdminSubAdmins /> : <Navigate to={firstAllowedPath} replace />}
+              />
             </Routes>
           </div>
         </main>

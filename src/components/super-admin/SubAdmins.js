@@ -3,8 +3,19 @@ import { useForm } from 'react-hook-form';
 import { Plus, Edit, Trash2, User, Building, Globe } from 'lucide-react';
 import { superAdminAPI } from '../../services/api';
 import toast from 'react-hot-toast';
+import { PERMISSIONS } from '../../constants/permissions';
 
 const SubAdmins = () => {
+  const assignablePermissions = [
+    { key: PERMISSIONS.DASHBOARD_VIEW, label: 'Dashboard' },
+    { key: PERMISSIONS.LEADS_VIEW, label: 'Leads (View)' },
+    { key: PERMISSIONS.LEADS_EDIT, label: 'Leads (Edit)' },
+    { key: PERMISSIONS.ANALYTICS_VIEW, label: 'Analytics' },
+    { key: PERMISSIONS.SUB_ADMINS_VIEW, label: 'Sub admins (View)' },
+    { key: PERMISSIONS.SUB_ADMINS_MANAGE, label: 'Sub admins (Manage)' },
+    { key: PERMISSIONS.PROFILE_VIEW, label: 'Profile (View)' },
+    { key: PERMISSIONS.PROFILE_EDIT, label: 'Profile (Edit)' },
+  ];
   const [subAdmins, setSubAdmins] = useState([]);
   const [landingPages, setLandingPages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,6 +26,8 @@ const SubAdmins = () => {
   const [limit] = useState(10);
   const [total, setTotal] = useState(0);
   const [paginationInfo, setPaginationInfo] = useState({});
+  // const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
 
   const {
     register,
@@ -63,6 +76,17 @@ const SubAdmins = () => {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.relative')) {
+        setOpenDropdownId(null);
+      }
+    };
+  
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // const fetchData = async () => {
   //   try {
   //     setLoading(true);
@@ -93,6 +117,13 @@ const SubAdmins = () => {
   //     setLoading(false);
   //   }
   // };
+  const toggleDropdown = (adminId) => {
+    if (openDropdownId === adminId) {
+      setOpenDropdownId(null);        // Close if clicking again
+    } else {
+      setOpenDropdownId(adminId);     // Open this admin's dropdown
+    }
+  };
 
   const onSubmit = async (data) => {
     try {
@@ -124,7 +155,8 @@ const SubAdmins = () => {
     // Set the landing page ID for editing
     const editData = {
       ...admin,
-      landingPageId: admin.landingPage?._id || admin.landingPage?.id || admin.access?.[0]?.landingPage?._id || admin.access?.[0]?.landingPage?.id || ''
+      landingPageId: admin.landingPage?._id || admin.landingPage?.id || admin.access?.[0]?.landingPage?._id || admin.access?.[0]?.landingPage?.id || '',
+      permissions: Array.isArray(admin.permissions) ? admin.permissions : []
     };
     reset(editData);
     setShowModal(true);
@@ -151,7 +183,18 @@ const SubAdmins = () => {
 
   const openCreateModal = () => {
     setEditingAdmin(null);
-    reset({});
+    reset({
+      permissions: [
+        PERMISSIONS.DASHBOARD_VIEW,
+        PERMISSIONS.LEADS_VIEW,
+        PERMISSIONS.LEADS_EDIT,
+        PERMISSIONS.ANALYTICS_VIEW,
+        PERMISSIONS.SUB_ADMINS_VIEW,
+        PERMISSIONS.SUB_ADMINS_MANAGE,
+        PERMISSIONS.PROFILE_VIEW,
+        PERMISSIONS.PROFILE_EDIT,
+      ],
+    });
     setShowModal(true);
   };
 
@@ -265,6 +308,9 @@ const SubAdmins = () => {
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Module Access
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Created
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -320,6 +366,84 @@ const SubAdmins = () => {
                       {admin.status}
                     </span>
                   </td>
+                  {/* <td className="px-6 py-4 text-xs text-gray-600">
+                    <div className="flex flex-wrap gap-1 max-w-xs">
+                      {(admin.permissions || []).length > 0 ? (
+                        (admin.permissions || []).map((permission) => (
+                          <span key={permission} className="px-2 py-1 rounded bg-gray-100 text-gray-700">
+                            {permission}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-gray-500">Default role access</span>
+                      )}
+                    </div>
+                  </td> */}
+                  {/* <td className="px-6 py-4 whitespace-nowrap">
+  <div className="flex flex-wrap gap-2 max-w-xs">
+    {(admin.permissions || []).length > 0 ? (
+      (admin.permissions || []).map((permission) => {
+        // Map the raw permission key to its corresponding label
+        const permissionLabel = assignablePermissions.find(
+          (perm) => perm.key === permission
+        )?.label;
+
+        return permissionLabel ? (
+          <span
+            key={permission}
+            className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
+          >
+            {permissionLabel}
+          </span>
+        ) : null;
+      })
+    ) : (
+      <span className="text-gray-500">Default role access</span>
+    )}
+  </div>
+</td> */}
+
+{/* Module Access Column - FIXED */}
+<td className="px-6 py-4 whitespace-nowrap">
+  <div className="relative">
+    <button 
+      onClick={() => toggleDropdown(admin._id || admin.id)}
+      className="text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 focus:outline-none"
+    >
+      View Permissions
+      <span className="text-xs">▼</span>
+    </button>
+
+    {/* Dropdown - Only show for the currently open admin */}
+    {openDropdownId === (admin._id || admin.id) && (
+      <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1">
+        <div className="px-4 py-2 text-xs font-semibold text-gray-500 border-b">
+          Module Permissions
+        </div>
+        <ul className="py-1 text-sm">
+          {(admin.permissions || []).length > 0 ? (
+            (admin.permissions || []).map((permission) => {
+              const permissionLabel = assignablePermissions.find(
+                (perm) => perm.key === permission
+              )?.label || permission;
+
+              return (
+                <li 
+                  key={permission} 
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-50"
+                >
+                  {permissionLabel}
+                </li>
+              );
+            })
+          ) : (
+            <li className="px-4 py-2 text-gray-500">No specific permissions assigned</li>
+          )}
+        </ul>
+      </div>
+    )}
+  </div>
+</td> 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(admin.createdAt).toLocaleDateString()}
                   </td>
@@ -467,6 +591,23 @@ const SubAdmins = () => {
                         <option value="approved">Approved</option>
                         <option value="rejected">Rejected</option>
                       </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Module Permissions</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {assignablePermissions.map((permission) => (
+                          <label key={permission.key} className="flex items-center gap-2 text-sm text-gray-700">
+                            <input
+                              type="checkbox"
+                              value={permission.key}
+                              {...register('permissions')}
+                              className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                            />
+                            {permission.label}
+                          </label>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>

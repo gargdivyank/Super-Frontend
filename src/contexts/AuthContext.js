@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../services/api';
+import { resolveUserPermissions } from '../constants/permissions';
 
 const AuthContext = createContext();
 
@@ -44,6 +45,13 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const normalizeUser = (rawUser) => {
+    if (!rawUser) return null;
+    return {
+      ...rawUser,
+      permissions: resolveUserPermissions(rawUser),
+    };
+  };
 
   useEffect(() => {
     // On mount, try to restore token & validate it with server.
@@ -62,7 +70,8 @@ export const AuthProvider = ({ children }) => {
         if (userData) {
           try {
             const parsedUser = JSON.parse(userData);
-            setUser(parsedUser);
+            const normalized = normalizeUser(parsedUser);
+            setUser(normalized);
             setIsAuthenticated(true);
           } catch (err) {
             console.warn('Failed to parse saved user, will re-validate.', err);
@@ -76,10 +85,11 @@ export const AuthProvider = ({ children }) => {
         // Backend returns { success: true, data: user }
         const serverUser = res?.data?.data || res?.data || null;
         if (serverUser) {
-          setUser(serverUser);
+          const normalized = normalizeUser(serverUser);
+          setUser(normalized);
           setIsAuthenticated(true);
           // Keep localStorage in sync with server data
-          localStorage.setItem('user', JSON.stringify(serverUser));
+          localStorage.setItem('user', JSON.stringify(normalized));
         } else {
           // Server returned no user -> clear token
           localStorage.removeItem('token');
@@ -106,14 +116,15 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.login(email, password);
       const { token, user: userData } = response.data;
+      const normalizedUser = normalizeUser(userData);
       
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('user', JSON.stringify(normalizedUser));
       
-      setUser(userData);
+      setUser(normalizedUser);
       setIsAuthenticated(true);
       
-      return { success: true, user: userData };
+      return { success: true, user: normalizedUser };
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -138,8 +149,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUser = (updatedUser) => {
-    setUser(updatedUser);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
+    const normalized = normalizeUser(updatedUser);
+    setUser(normalized);
+    localStorage.setItem('user', JSON.stringify(normalized));
   };
 
   const value = {

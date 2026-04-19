@@ -116,6 +116,12 @@ export const subAdminAPI = {
 
   // Analytics (assigned landing page(s) only — no query params)
   getAnalytics: () => api.get('/sub-admin/analytics'),
+
+  // Sub Admins / Users (assigned landing page(s) only)
+  getSubAdmins: (filters = {}) => api.get('/sub-admin/sub-admins', { params: filters }),
+  createSubAdmin: (data) => api.post('/sub-admin/sub-admins', data),
+  updateSubAdmin: (id, data) => api.put(`/sub-admin/sub-admins/${id}`, data),
+  deleteSubAdmin: (id) => api.delete(`/sub-admin/sub-admins/${id}`),
   
   // Access Requests
   createAccessRequest: (landingPageId, message) => api.post('/access-requests', { landingPageId, message }),
